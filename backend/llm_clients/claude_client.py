@@ -9,7 +9,7 @@ if not ANTHROPIC_API_KEY:
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
-MODEL_NAME = "claude-3-5-haiku-20241022" # Or other preferred model
+MODEL_NAME = "claude-3-5-haiku-20241022"
 
 def get_claude_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
     if not client:
@@ -18,8 +18,6 @@ def get_claude_response(prompt, system_prompt="You are a helpful assistant.", ch
         
         messages_for_api = []
         if chat_history:
-            # Ensure chat_history is in the correct format {"role": ..., "content": ...}
-            # The roles in chat_history should already be "user" or "assistant"
             messages_for_api.extend(chat_history)
         
         messages_for_api.append({"role": "user", "content": prompt})
@@ -27,12 +25,10 @@ def get_claude_response(prompt, system_prompt="You are a helpful assistant.", ch
         response = client.messages.create(
             model=MODEL_NAME,
             max_tokens=max_tokens,
-            system=system_prompt, # System prompt is a top-level parameter for Claude
+            system=system_prompt,
             messages=messages_for_api
         )
-        # Accessing the response content correctly for Claude 3 models
         if response.content and isinstance(response.content, list) and len(response.content) > 0:
-            # Assuming the first content block is of type 'text'
             if hasattr(response.content[0], 'text'):
                  return response.content[0].text
         return "Error: No text content found in Claude's response."
@@ -41,13 +37,10 @@ def get_claude_response(prompt, system_prompt="You are a helpful assistant.", ch
         return f"Error from Claude: {str(e)}"
 
 if __name__ == '__main__':
-    # Example usage (requires API key to be set)
     if ANTHROPIC_API_KEY:
         test_prompt = "Hello, Claude! Tell me a fun fact about AI."
         print(f"Sending prompt to Claude: {test_prompt}")
-        # Test with system prompt
-        # response = get_claude_response(test_prompt, system_prompt="You are a poetic AI.")
-        # Test with history
+        response = get_claude_response(test_prompt) # Default call
         history = [
             {"role": "user", "content": "What was my previous question?"},
             {"role": "assistant", "content": "You asked for a fun fact about AI."}

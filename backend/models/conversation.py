@@ -1,30 +1,26 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
-# Example structure for a Conversation document in MongoDB
-# We might use a library like MongoEngine or Pydantic later for schema validation
 
 class Conversation(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: Optional[str] = None # Added optional name field
+    name: Optional[str] = None
     system_prompt: str
-    llm_participants: List[str] # List of LLM identifiers (e.g., ["claude", "gemini"])
+    llm_participants: List[str]
     auditor_id: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    # Add other fields as needed, e.g., title, tags, etc.
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
-        # If you want to allow Pydantic to work with ORM-like objects directly (less relevant here as we map manually)
-        # orm_mode = True # For Pydantic V1, use this
-        from_attributes = True # For Pydantic V2, use this for ORM mode
+
+        from_attributes = True
 
     def to_db_document(self) -> Dict[str, Any]:
         """Converts the Pydantic model to a dictionary suitable for MongoDB, mapping 'id' to '_id'."""
-        doc = self.model_dump(exclude_none=True) # model_dump is V2, .dict() is V1
-        doc["_id"] = doc.pop("id") # Map id to _id
+        doc = self.model_dump(exclude_none=True)
+        doc["_id"] = doc.pop("id")
         return doc
 
     @classmethod

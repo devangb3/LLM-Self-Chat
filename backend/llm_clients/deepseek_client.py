@@ -8,7 +8,7 @@ if not DEEPSEEK_API_KEY:
     print("Warning: DEEPSEEK_API_KEY not found in environment variables. Deepseek client will not work.")
     # raise ValueError("DEEPSEEK_API_KEY not found in environment variables")
 
-MODEL_NAME = "deepseek-chat" # Or other preferred model, e.g., "deepseek-coder"
+MODEL_NAME = "deepseek-chat"
 
 def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
     if not DEEPSEEK_API_KEY:
@@ -20,12 +20,12 @@ def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", 
     }
 
     messages = []
-    if system_prompt:
-        # Deepseek API might have a specific way to handle system prompts.
-        # Commonly, it's the first message with role 'system'.
+    
+    # Only add system prompt if chat history is empty or doesn't already contain a system message
+    if system_prompt and (not chat_history or not any(msg.get("role") == "system" for msg in chat_history)):
         messages.append({"role": "system", "content": system_prompt})
     
-    if chat_history: # chat_history is expected to be a list of {"role": ..., "content": ...} dicts
+    if chat_history: 
         messages.extend(chat_history)
         
     messages.append({"role": "user", "content": prompt})
@@ -34,8 +34,6 @@ def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", 
         "model": MODEL_NAME,
         "messages": messages,
         "max_tokens": max_tokens,
-        # Add other parameters like temperature, stream, etc., as needed
-        # "stream": False 
     }
 
     try:
@@ -43,7 +41,6 @@ def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", 
         response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
         
         response_json = response.json()
-        # Adjust based on the actual API response structure
         if response_json.get("choices") and len(response_json["choices"]) > 0:
             return response_json["choices"][0]["message"]["content"]
         else:
@@ -68,6 +65,7 @@ if __name__ == '__main__':
         # Test with history and system prompt
         system = "You are a master programmer who loves Python."
         history = [
+            {"role": "system", "content": system},  # System prompt already in history
             {"role": "user", "content": "What is your favorite programming language?"},
             {"role": "assistant", "content": "Python, of course! It's versatile and elegant."}
         ]

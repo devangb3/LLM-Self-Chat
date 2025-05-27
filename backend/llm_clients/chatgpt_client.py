@@ -11,7 +11,7 @@ client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 MODEL_NAME = "gpt-4o-mini-2024-07-18" # Or other preferred model like "gpt-4"
 
-def get_chatgpt_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
+def get_chatgpt_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=5000):
     if not client:
         return "OpenAI API key not configured."
     try:
@@ -19,7 +19,7 @@ def get_chatgpt_response(prompt, system_prompt="You are a helpful assistant.", c
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         
-        if chat_history: # chat_history is expected to be a list of {"role": ..., "content": ...} dicts
+        if chat_history:
             messages.extend(chat_history)
             
         messages.append({"role": "user", "content": prompt})
@@ -41,7 +41,6 @@ if __name__ == '__main__':
         response = get_chatgpt_response(test_prompt)
         print(f"ChatGPT's response:\n{response}")
 
-        # Test with history and system prompt
         system = "You are a pirate captain."
         history = [
             {"role": "user", "content": "Ahoy there!"},

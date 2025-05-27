@@ -14,7 +14,6 @@ import {
   Checkbox,
   ListItemText,
   OutlinedInput,
-  Box,
   Switch,
   FormControlLabel
 } from '@mui/material';
@@ -56,14 +55,12 @@ const CreateConversationDialog = ({ open, onClose, onCreate, availableLLMs }) =>
       system_prompt: systemPrompt,
       llm_participants: selectedLLMs,
       start_conversation: startConversation,
-      // auditor_id: 'auditor' // Could be added if needed
     });
   };
 
   const handleLLMChange = (event) => {
     const { target: { value } } = event;
     setSelectedLLMs(
-      // On autofill we get a stringified value.
       typeof value === 'string' ? value.split(',') : value,
     );
   };

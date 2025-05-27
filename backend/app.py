@@ -9,6 +9,7 @@ from datetime import datetime, timezone # Added timezone
 # from bson.objectid import ObjectId 
 
 from pydantic import ValidationError
+from flask_cors import CORS
 
 load_dotenv() # Load environment variables from .env
 
@@ -21,11 +22,10 @@ mongo_uri = os.getenv("MONGODB_URI")
 if not mongo_uri:
     raise ValueError("MONGODB_URI not found in environment variables")
 client = MongoClient(mongo_uri)
-db = client.llm_chat_app # Or client["llm_chat_app"]
+db = client.llm_chat_app 
 
-# Import LLM clients and models
 from llm_clients import get_claude_response, get_gemini_response, get_chatgpt_response, get_deepseek_response
-from models import Conversation, Message # These are now Pydantic models
+from models import Conversation, Message
 
 ALL_LLMS = {
     "claude": get_claude_response,
@@ -34,9 +34,7 @@ ALL_LLMS = {
     "deepseek": get_deepseek_response
 }
 
-# Enable CORS for all routes
-from flask_cors import CORS
-CORS(app, resources={r"/*": {"origins": "*"}}) # For development only - restrict origins in production
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route("/")
 def index():
@@ -216,10 +214,6 @@ def handle_set_system_prompt(data):
         app.logger.error(f"Error in set_system_prompt: {e}", exc_info=True)
         emit('error', {'message': 'Failed to set system prompt.'})
 
-# We will add more specific API endpoints later, e.g.:
-# - POST /api/conversations (to create a new conversation)
-# - GET /api/conversations (to list conversations)
-# - GET /api/conversations/<conversation_id> (to get a specific conversation with messages)
 
 @app.route("/api/conversations", methods=["POST"])
 def create_conversation():

@@ -151,10 +151,8 @@ const ChatPage = () => {
       const response = await api.createConversation(convData);
       console.log('Create conversation response:', response.data); // Debug log
       
-      // First refresh the conversations list
       await fetchConversations();
       
-      // Then navigate to the new conversation
       if (response.data && response.data.id) {
         navigate(`/chat/${response.data.id}`);
       } else {
@@ -179,10 +177,8 @@ const ChatPage = () => {
       const response = await api.deleteConversation(conversationId);
       console.log('Delete response:', response); // Debug log
       
-      // Update local state
       setConversations(prev => prev.filter(conv => conv.id !== conversationId));
       
-      // If the deleted conversation was selected, clear the selection
       if (currentConversation && currentConversation.id === conversationId) {
         setCurrentConversation(null);
         setMessages([]);
@@ -200,14 +196,11 @@ const ChatPage = () => {
   
   const handleSetSystemPrompt = (newPrompt) => {
     if (!currentConversation || !socket.current) return;
-    // Here, we'd ideally update it via a backend API endpoint if we want to persist it before socket emit
-    // For now, let's assume the backend handles persistence on 'set_system_prompt' socket event
     console.log(`Setting system prompt for ${currentConversation.id} to: ${newPrompt}`);
     socket.current.emit('set_system_prompt', {
         conversation_id: currentConversation.id, 
         prompt: newPrompt 
     });
-    // Optimistically update UI or wait for 'system_prompt_updated' event
     setIsSystemPromptModalOpen(false);
   };
 

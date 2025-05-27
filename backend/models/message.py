@@ -1,18 +1,17 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 
-# Example structure for a Message document in MongoDB
 
 class Message(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    conversation_id: str  # This will be the string UUID of the Conversation
-    sender_type: str  # "llm" or "auditor"
-    sender_id: str    # LLM name (e.g., "claude", "gemini") or auditor's user ID
-    llm_name: Optional[str] = None # Specific LLM that sent the message (if sender_type is "llm")
+    conversation_id: str
+    sender_type: str
+    sender_id: str
+    llm_name: Optional[str] = None
     content: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
         from_attributes = True
@@ -21,8 +20,6 @@ class Message(BaseModel):
         """Converts the Pydantic model to a dictionary suitable for MongoDB, mapping 'id' to '_id'."""
         doc = self.model_dump(exclude_none=True)
         doc["_id"] = doc.pop("id")
-        # conversation_id is already a string, so no special handling needed for DB if it's just stored as a string.
-        # If it were an ObjectId before, this simplifies it.
         return doc
 
     @classmethod
