@@ -1,0 +1,138 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  OutlinedInput,
+  Box,
+  Switch,
+  FormControlLabel
+} from '@mui/material';
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
+const CreateConversationDialog = ({ open, onClose, onCreate, availableLLMs }) => {
+  const [conversationName, setConversationName] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
+  const [selectedLLMs, setSelectedLLMs] = useState([availableLLMs[0] || 'chatgpt']);
+  const [startConversation, setStartConversation] = useState(true);
+
+  useEffect(() => {
+    // Reset fields when dialog opens, if needed, or based on new props
+    if (open) {
+      setConversationName('');
+      setSystemPrompt('You are a helpful assistant.');
+      setSelectedLLMs([availableLLMs[0] || 'chatgpt']);
+      setStartConversation(true);
+    }
+  }, [open, availableLLMs]);
+
+  const handleCreate = () => {
+    if (selectedLLMs.length === 0) {
+        alert("Please select at least one LLM participant."); // Basic validation
+        return;
+    }
+    onCreate({
+      name: conversationName.trim() || null,
+      system_prompt: systemPrompt,
+      llm_participants: selectedLLMs,
+      start_conversation: startConversation,
+      // auditor_id: 'auditor' // Could be added if needed
+    });
+  };
+
+  const handleLLMChange = (event) => {
+    const { target: { value } } = event;
+    setSelectedLLMs(
+      // On autofill we get a stringified value.
+      typeof value === 'string' ? value.split(',') : value,
+    );
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Create New Conversation</DialogTitle>
+      <DialogContent>
+        <DialogContentText sx={{mb:2}}>
+          Configure the details for the new LLM conversation.
+        </DialogContentText>
+        <TextField
+          autoFocus
+          margin="dense"
+          id="conversation-name"
+          label="Conversation Name (Optional)"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={conversationName}
+          onChange={(e) => setConversationName(e.target.value)}
+          sx={{mb: 2}}
+        />
+        <TextField
+          margin="dense"
+          id="new-system-prompt"
+          label="System Prompt"
+          type="text"
+          fullWidth
+          multiline
+          rows={4}
+          variant="outlined"
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          sx={{mb: 2}}
+        />
+        <FormControl fullWidth sx={{mb: 2}}>
+          <InputLabel id="llm-participants-label">LLM Participants</InputLabel>
+          <Select
+            labelId="llm-participants-label"
+            id="llm-participants-select"
+            multiple
+            value={selectedLLMs}
+            onChange={handleLLMChange}
+            input={<OutlinedInput label="LLM Participants" />}
+            renderValue={(selected) => selected.join(', ')}
+            MenuProps={MenuProps}
+          >
+            {availableLLMs.map((name) => (
+              <MenuItem key={name} value={name}>
+                <Checkbox checked={selectedLLMs.indexOf(name) > -1} />
+                <ListItemText primary={name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControlLabel
+            control={<Switch checked={startConversation} onChange={(e) => setStartConversation(e.target.checked)} />}
+            label="Let the first LLM start the conversation"
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleCreate} variant="contained" disabled={selectedLLMs.length === 0}>
+          Create Conversation
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default CreateConversationDialog; 

@@ -1,0 +1,32 @@
+.env
+venv/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+node_modules/
+# Frontend build outputs
+dist/
+build/
+.next/
+out/
+.cache/
+
+# Frontend dependencies and package managers
+node_modules/
+yarn.lock
+package-lock.json
+.pnp.*
+.yarn/
+
+# Frontend development
+.env.local
+.env.development
+.env.test
+.env.production
+.DS_Store
+*.log
+coverage/
