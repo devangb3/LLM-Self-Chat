@@ -45,15 +45,18 @@ const ChatPage = () => {
 
   const fetchConversationDetails = useCallback(async (convId) => {
     if (!convId) {
-        setCurrentConversation(null);
-        setMessages([]);
-        setSystemPrompt('');
-        return;
+      console.log("[ChatPage] fetchConversationDetails: No convId provided, clearing state");
+      setCurrentConversation(null);
+      setMessages([]);
+      setSystemPrompt('');
+      return;
     }
+    
     console.log("[ChatPage] fetchConversationDetails: Fetching details for convId:", convId, "Type:", typeof convId);
     try {
       setLoading(true);
       const response = await api.getConversationDetails(convId);
+      console.log("[ChatPage] fetchConversationDetails: Response:", response.data); // Debug log
       setCurrentConversation(response.data);
       setMessages(response.data.messages || []);
       setSystemPrompt(response.data.system_prompt || '');
@@ -68,7 +71,7 @@ const ChatPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, paramConvId]);
 
   useEffect(() => {
     fetchConversations();
@@ -146,14 +149,50 @@ const ChatPage = () => {
     try {
       setLoading(true);
       const response = await api.createConversation(convData);
-      const newConvId = response.data.conversation_id;
-      await fetchConversations(); // Refresh list
-      navigate(`/chat/${newConvId}`);
+      console.log('Create conversation response:', response.data); // Debug log
+      
+      // First refresh the conversations list
+      await fetchConversations();
+      
+      // Then navigate to the new conversation
+      if (response.data && response.data.id) {
+        navigate(`/chat/${response.data.id}`);
+      } else {
+        console.error('No conversation ID in response:', response.data);
+        setError('Failed to create conversation: No ID returned');
+      }
+      
       setIsCreateConvDialogOpen(false);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create conversation');
       console.error("Create conversation error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId) => {
+    try {
+      console.log('Deleting conversation:', conversationId); // Debug log
+      setLoading(true);
+      const response = await api.deleteConversation(conversationId);
+      console.log('Delete response:', response); // Debug log
+      
+      // Update local state
+      setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+      
+      // If the deleted conversation was selected, clear the selection
+      if (currentConversation && currentConversation.id === conversationId) {
+        setCurrentConversation(null);
+        setMessages([]);
+        navigate('/chat');
+      }
+      
+      setError(null);
+    } catch (err) {
+      console.error('Delete conversation error:', err);
+      setError(err.response?.data?.error || 'Failed to delete conversation');
     } finally {
       setLoading(false);
     }
@@ -197,7 +236,8 @@ const ChatPage = () => {
           <ConversationList 
             conversations={conversations} 
             selectedConversationId={currentConversation?.id}
-            onSelectConversation={handleSelectConversation} 
+            onSelectConversation={handleSelectConversation}
+            onDeleteConversation={handleDeleteConversation}
           />
         </Grid>
 

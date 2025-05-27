@@ -285,7 +285,6 @@ def get_conversation_details(conversation_id: str):
         if not conversation_id or not isinstance(conversation_id, str):
             return jsonify({"error": "Invalid conversation_id format, must be a string."}), 400
 
-        
         conv_doc_db = db.conversations.find_one({"_id": conversation_id})
         
         if not conv_doc_db:
@@ -303,12 +302,32 @@ def get_conversation_details(conversation_id: str):
         conv_response['messages'] = messages_list
         return jsonify(conv_response)
 
-    except ValidationError as e: # Catch Pydantic errors during from_db_document
+    except ValidationError as e:
         app.logger.error(f"Pydantic validation error in get_conversation_details for ID {conversation_id}: {e.errors()}", exc_info=True)
         return jsonify({"error": "Data validation error while fetching conversation.", "details": e.errors()}), 500
     except Exception as e:
         app.logger.error(f"Error in get_conversation_details for ID {conversation_id}: {e}", exc_info=True)
         return jsonify({"error": "An unexpected error occurred while fetching conversation details."}), 500
+
+@app.route("/api/conversations/<conversation_id>", methods=["DELETE"])
+def delete_conversation(conversation_id: str):
+    try:
+        if not conversation_id or not isinstance(conversation_id, str):
+            return jsonify({"error": "Invalid conversation_id format, must be a string."}), 400
+
+        # Delete the conversation
+        result = db.conversations.delete_one({"_id": conversation_id})
+        if result.deleted_count == 0:
+            return jsonify({"error": "Conversation not found"}), 404
+            
+        # Delete all messages associated with this conversation
+        db.messages.delete_many({"conversation_id": conversation_id})
+        
+        return jsonify({"message": "Conversation and associated messages deleted successfully"})
+
+    except Exception as e:
+        app.logger.error(f"Error deleting conversation {conversation_id}: {e}", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred while deleting the conversation."}), 500
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5001) # Using port 5001 to avoid conflict with React dev server 
