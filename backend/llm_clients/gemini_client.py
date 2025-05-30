@@ -1,39 +1,48 @@
 import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
+
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
     print("Warning: GEMINI_API_KEY not found in environment variables. Gemini client will not work.")
     # raise ValueError("GEMINI_API_KEY not found in environment variables")
-else:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 MODEL_NAME = "gemini-2.5-flash-preview-05-20" 
-model = genai.GenerativeModel(MODEL_NAME) if GEMINI_API_KEY else None
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 def get_gemini_response(prompt, system_prompt=None, chat_history=None):
-    if not model:
+    if not client:
         return "Gemini API key not configured."
     try:
+        # Build the conversation history as a string
+        conversation = []
         
-        messages_for_api = []
-        if system_prompt:
-            pass
-
         if chat_history:
-            messages_for_api.extend(chat_history)
+            for msg in chat_history:
+                role = msg.get("role", "user")
+                parts = msg.get("parts", [])
+                if isinstance(parts, list):
+                    content = " ".join(str(p) for p in parts)
+                else:
+                    content = str(parts)
+                conversation.append(f"{role}: {content}")
 
-        messages_for_api.append({"role": "user", "parts": [prompt]})
+        # Add the current prompt
+        conversation.append(f"user: {prompt}")
         
-       
-
-        full_prompt_content = messages_for_api
+        # Join all messages with newlines
+        full_prompt_content = "\n".join(conversation)
         
-        current_model = model
+        current_client = client
 
-        print(f"[Gemini Client] Generating content with messages_for_api: {full_prompt_content}")
-        response = current_model.generate_content(full_prompt_content)
+        print(f"[Gemini Client] Generating content with prompt: {full_prompt_content}")
+        response = current_client.models.generate_content(
+            model=MODEL_NAME,
+            contents=full_prompt_content,
+            config=types.GenerateContentConfig(system_instruction=system_prompt)
+        )
         return response.text
     except Exception as e:
         print(f"Error getting Gemini response: {e}")

@@ -5,7 +5,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 if not OPENAI_API_KEY:
     print("Warning: OPENAI_API_KEY not found in environment variables. ChatGPT client will not work.")
-    # raise ValueError("OPENAI_API_KEY not found in environment variables")
 
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
