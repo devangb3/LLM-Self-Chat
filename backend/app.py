@@ -1,6 +1,6 @@
 import os
 import uuid # For new ID generation if needed directly, though Pydantic models handle it
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 from pymongo import MongoClient, ReadPreference # ReadPreference might be removed if not using replica set or if default is fine
@@ -10,6 +10,9 @@ from datetime import datetime, timezone # Added timezone
 
 from pydantic import ValidationError
 from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+import bcrypt
+from functools import wraps
 
 load_dotenv() # Load environment variables from .env
 
@@ -24,8 +27,18 @@ if not mongo_uri:
 client = MongoClient(mongo_uri)
 db = client.llm_chat_app 
 
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.session_protection = 'strong'
+
+# Configure CORS to allow credentials
+CORS(app, resources={r"/*": {"origins": "http://localhost:5874", "supports_credentials": True}})
+
 from llm_clients import get_claude_response, get_gemini_response, get_chatgpt_response, get_deepseek_response
 from models import Conversation, Message
+from models.user import User
 
 ALL_LLMS = {
     "claude": get_claude_response,
@@ -34,7 +47,21 @@ ALL_LLMS = {
     "deepseek": get_deepseek_response
 }
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+@login_manager.user_loader
+def load_user(user_id):
+    user_doc = db.users.find_one({"_id": user_id})
+    if user_doc:
+        return User.from_db_document(user_doc)
+    return None
+
+def socket_auth_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated:
+            emit('error', {'message': 'Authentication required'})
+            return
+        return f(*args, **kwargs)
+    return wrapped
 
 @app.route("/")
 def index():
@@ -214,22 +241,137 @@ def handle_set_system_prompt(data):
         app.logger.error(f"Error in set_system_prompt: {e}", exc_info=True)
         emit('error', {'message': 'Failed to set system prompt.'})
 
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+
+        # Check if user already exists
+        if db.users.find_one({"email": email}):
+            return jsonify({"error": "Email already registered"}), 400
+
+        # Hash password
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        # Create new user
+        new_user = User(
+            email=email,
+            password_hash=password_hash
+        )
+
+        db.users.insert_one(new_user.to_db_document())
+        return jsonify({"message": "User registered successfully"}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/auth/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        return jsonify({"message": "Please use POST method to login"}), 200
+
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+
+        user_doc = db.users.find_one({"email": email})
+        if not user_doc:
+            return jsonify({"error": "Invalid email or password"}), 401
+
+        user = User.from_db_document(user_doc)
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+            return jsonify({"error": "Invalid email or password"}), 401
+
+        login_user(user, remember=True)
+        return jsonify({
+            "message": "Logged in successfully",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "available_models": user.get_available_models()
+            }
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/auth/logout", methods=["POST"])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"message": "Logged out successfully"})
+
+@app.route("/api/auth/user", methods=["GET"])
+@login_required
+def get_user():
+    return jsonify({
+        "id": current_user.id,
+        "email": current_user.email,
+        "available_models": current_user.get_available_models()
+    })
+
+@app.route("/api/auth/api-keys", methods=["POST"])
+@login_required
+def update_api_keys():
+    try:
+        data = request.json
+        updates = {}
+        
+        # Only update keys that are provided in the request
+        for model in ["claude", "gemini", "openai", "deepseek"]:
+            key = data.get(f"{model}_api_key")
+            if key is not None and key.strip():  # Only update if key is provided and not empty
+                updates[f"{model}_api_key"] = User.encrypt_api_key(key)
+
+        if not updates:
+            return jsonify({"error": "No valid API keys provided"}), 400
+
+        # Use $set to update only the provided keys
+        result = db.users.update_one(
+            {"_id": current_user.id},
+            {"$set": updates}
+        )
+
+        if result.modified_count == 0:
+            return jsonify({"message": "No changes were made to API keys"}), 200
+
+        return jsonify({
+            "message": "API keys updated successfully",
+            "updated_keys": list(updates.keys())
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/conversations", methods=["POST"])
+@login_required
 def create_conversation():
     try:
         data = request.json
-        # Pydantic will use default_factory for id, created_at, updated_at
-        new_conv_model = Conversation(**data) 
+        # Add user_id to conversation
+        data["user_id"] = current_user.id
+        new_conv_model = Conversation(**data)
         
-        # Validate LLM names (already part of Conversation model if llm_participants is Enum, but good to check again)
+        # Validate LLM names and check if user has API keys for them
+        available_models = current_user.get_available_models()
         for llm_name in new_conv_model.llm_participants:
             if llm_name not in ALL_LLMS:
                 return jsonify({"error": f"Unsupported LLM: {llm_name}"}), 400
+            if not available_models.get(llm_name):
+                return jsonify({"error": f"No API key provided for {llm_name}"}), 400
 
         db_doc = new_conv_model.to_db_document()
         result = db.conversations.insert_one(db_doc)
-        created_id = str(db_doc['_id']) # This is now our string UUID
+        created_id = str(db_doc['_id'])
 
         app.logger.info(f"Conversation created with ID: {created_id}")
         
@@ -251,7 +393,7 @@ def create_conversation():
                 llm_start_msg = Message(**llm_start_msg_data)
                 db.messages.insert_one(llm_start_msg.to_db_document())
 
-        return jsonify({"message": "Conversation created", "conversation_id": created_id, "data": new_conv_model.model_dump(mode='json')}), 201
+        return jsonify({"id": created_id, "message": "Conversation created successfully"})
 
     except ValidationError as e:
         app.logger.error(f"Pydantic validation error creating conversation: {e.errors()}")
@@ -261,13 +403,18 @@ def create_conversation():
         return jsonify({"error": "Failed to create conversation"}), 500
 
 @app.route("/api/conversations", methods=["GET"])
+@login_required
 def get_conversations():
     try:
-        conv_cursor = db.conversations.find().sort("created_at", -1)
+        # Get conversations for the current user
+        conv_cursor = db.conversations.find({"user_id": current_user.id}).sort("created_at", -1)
         conversations_list = []
         for conv_doc_db in conv_cursor:
-            # No need for .to_dict() if from_db_document is used correctly and then model_dump()
-            conversations_list.append(Conversation.from_db_document(conv_doc_db).model_dump(mode='json'))
+            try:
+                conversations_list.append(Conversation.from_db_document(conv_doc_db).model_dump(mode='json'))
+            except Exception as e:
+                app.logger.error(f"Error processing conversation {conv_doc_db.get('_id')}: {e}")
+                continue
         return jsonify(conversations_list)
     except Exception as e:
         app.logger.error(f"Error in get_conversations: {e}", exc_info=True)

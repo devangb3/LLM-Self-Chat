@@ -1,9 +1,9 @@
 import React from 'react';
-import {
-  Routes,
-  Route,
-  Navigate
-} from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ApiKeyManager from './components/ApiKeyManager';
+import authService from './services/authService';
 import ChatPage from './pages/ChatPage';
 import { Box, AppBar, Toolbar, Typography, Container } from '@mui/material';
 
@@ -30,16 +30,53 @@ function MainLayout({ children }) {
   );
 }
 
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+    const user = authService.getCurrentUser();
+    if (!user) {
+        return <Navigate to="/login" />;
+    }
+    return children;
+};
+
 function App() {
-  return (
-    <MainLayout>
-      <Routes>
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/chat/:conversationId" element={<ChatPage />} />
-        <Route path="*" element={<Navigate to="/chat" replace />} />
-      </Routes>
-    </MainLayout>
-  );
+    return (
+        <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+                path="/api-keys"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <ApiKeyManager />
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route 
+                path="/chat" 
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <ChatPage />
+                        </MainLayout>
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/chat/:conversationId" 
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <ChatPage />
+                        </MainLayout>
+                    </ProtectedRoute>
+                } 
+            />
+            <Route path="*" element={<Navigate to="/api-keys" />} />
+        </Routes>
+    );
 }
 
 export default App;

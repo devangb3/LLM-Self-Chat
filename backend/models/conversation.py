@@ -6,7 +6,9 @@ from pydantic import BaseModel, Field
 
 class Conversation(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: Optional[str] = None
+    name: str
+    title: Optional[str] = Field(default="Untitled Conversation")
+    user_id: Optional[str] = None
     system_prompt: str
     llm_participants: List[str]
     auditor_id: Optional[str] = None
@@ -14,7 +16,6 @@ class Conversation(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
-
         from_attributes = True
 
     def to_db_document(self) -> Dict[str, Any]:
