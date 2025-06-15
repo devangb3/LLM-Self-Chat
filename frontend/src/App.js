@@ -1,14 +1,26 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ApiKeyManager from './components/ApiKeyManager';
 import authService from './services/authService';
 import ChatPage from './pages/ChatPage';
-import { Box, AppBar, Toolbar, Typography, Container } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 // Basic Layout Structure
 function MainLayout({ children }) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
@@ -16,6 +28,13 @@ function MainLayout({ children }) {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             LLM Auditor Chat
           </Typography>
+          <Button 
+            color="inherit" 
+            onClick={handleLogout}
+            startIcon={<LogoutIcon />}
+          >
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
       <Container component="main" sx={{ flexGrow: 1, py: 3}}>
