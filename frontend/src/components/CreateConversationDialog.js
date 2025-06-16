@@ -36,7 +36,6 @@ const CreateConversationDialog = ({ open, onClose, onCreate, availableLLMs }) =>
   const [startConversation, setStartConversation] = useState(true);
 
   useEffect(() => {
-    // Reset fields when dialog opens, if needed, or based on new props
     if (open) {
       setConversationName('');
       setSystemPrompt('You are a helpful assistant.');
@@ -47,7 +46,7 @@ const CreateConversationDialog = ({ open, onClose, onCreate, availableLLMs }) =>
 
   const handleCreate = () => {
     if (selectedLLMs.length === 0) {
-        alert("Please select at least one LLM participant."); // Basic validation
+        alert("Please select at least one LLM participant.")
         return;
     }
     onCreate({

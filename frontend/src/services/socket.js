@@ -23,7 +23,6 @@ export const getSocket = () => {
       console.error('Socket connection error:', error);
     });
 
-    // Example: Listen to a generic response or welcome message from backend
     socket.on('response', (data) => {
       console.log('Socket event "response":', data);
     });
@@ -36,11 +35,9 @@ export const disconnectSocket = () => {
     socket.disconnect();
     console.log('Socket explicitly disconnected.');
   }
-  socket = null; // Allow re-creation if getSocket is called again
+  socket = null;
 };
 
-// You can add more specific event emission/listening functions here if needed
-// For example:
 // export const sendMessage = (messageData) => {
 //   const currentSocket = getSocket();
 //   if (currentSocket) {

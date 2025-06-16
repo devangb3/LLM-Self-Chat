@@ -54,9 +54,7 @@ if __name__ == '__main__':
     if GEMINI_API_KEY:
         test_prompt = "Hello, Gemini! What is the future of AI?"
         print(f"Sending prompt to Gemini: {test_prompt}")
-        # Example with a system prompt (adapt as needed based on API specifics)
         system_instruction = "You are a futuristic AI. Be creative."
-        # response = get_gemini_response(test_prompt, system_prompt=system_instruction)
         response = get_gemini_response(test_prompt)
         print(f"Gemini's response: {response}")
 

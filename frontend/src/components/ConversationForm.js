@@ -62,7 +62,7 @@ const ConversationForm = () => {
 
     const handleLLMSelect = (llm) => {
         if (!availableModels[llm]) {
-            return; // Don't allow selection if API key is not available
+            return;
         }
 
         setFormData(prev => ({

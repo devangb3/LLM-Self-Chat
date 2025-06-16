@@ -22,7 +22,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [systemPrompt, setSystemPrompt] = useState(''); // System prompt for current conv
+  const [systemPrompt, setSystemPrompt] = useState('');
 
   const [isSystemPromptModalOpen, setIsSystemPromptModalOpen] = useState(false);
   const [isCreateConvDialogOpen, setIsCreateConvDialogOpen] = useState(false);
@@ -56,7 +56,7 @@ const ChatPage = () => {
     try {
       setLoading(true);
       const response = await api.getConversationDetails(convId);
-      console.log("[ChatPage] fetchConversationDetails: Response:", response.data); // Debug log
+      console.log("[ChatPage] fetchConversationDetails: Response:", response.data);
       setCurrentConversation(response.data);
       setMessages(response.data.messages || []);
       setSystemPrompt(response.data.system_prompt || '');

@@ -13,13 +13,11 @@ const SystemPromptModal = ({ open, onClose, currentPrompt, onSetPrompt, disabled
   const [prompt, setPrompt] = useState(currentPrompt || '');
 
   useEffect(() => {
-    // Update internal state if the currentPrompt prop changes (e.g., when conversation changes)
     setPrompt(currentPrompt || '');
-  }, [currentPrompt, open]); // also re-sync when modal opens
+  }, [currentPrompt, open]);
 
   const handleSet = () => {
     onSetPrompt(prompt);
-    // onClose(); // Usually handled by parent after successful submission in ChatPage
   };
 
   return (

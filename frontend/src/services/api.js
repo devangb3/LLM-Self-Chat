@@ -9,7 +9,6 @@ const apiClient = axios.create({
   },
 });
 
-// Add response interceptor for debugging
 apiClient.interceptors.response.use(
   response => {
     if (response.config.url.includes('/conversations')) {
@@ -30,12 +29,10 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Conversation Endpoints
 export const createConversation = (data) => apiClient.post('/conversations', data);
 export const getConversations = () => apiClient.get('/conversations');
 export const getConversationDetails = (conversationId) => apiClient.get(`/conversations/${conversationId}`);
 export const deleteConversation = (conversationId) => apiClient.delete(`/conversations/${conversationId}`);
 
-// Potentially other endpoints can be added here, e.g., for user authentication if needed later.
 
 export default apiClient; 

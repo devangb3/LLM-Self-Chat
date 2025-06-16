@@ -29,10 +29,9 @@ class Message(BaseModel):
             doc["id"] = str(doc.pop("_id"))
         return cls(**doc)
 
-# Example Usage (for testing this file):
 if __name__ == "__main__":
     msg_data = {
-        "conversation_id": str(uuid.uuid4()), # Example conversation UUID
+        "conversation_id": str(uuid.uuid4()),
         "sender_type": "llm",
         "sender_id": "claude",
         "llm_name": "claude-3-opus",

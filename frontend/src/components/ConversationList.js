@@ -16,22 +16,21 @@ const ConversationList = ({ conversations, selectedConversationId, onSelectConve
   }
 
   const handleDelete = (e, conversationId) => {
-    e.stopPropagation(); // Prevent triggering the ListItemButton click
-    console.log('Delete clicked for conversation:', conversationId); // Debug log
+    e.stopPropagation();
+    console.log('Delete clicked for conversation:', conversationId);
     if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
       onDeleteConversation(conversationId);
     }
   };
 
   const handleSelect = (conversationId) => {
-    console.log('Select clicked for conversation:', conversationId); // Debug log
+    console.log('Select clicked for conversation:', conversationId);
     onSelectConversation(conversationId);
   };
 
   return (
     <List sx={{ overflowY: 'auto', flexGrow: 1, p: 0 }}>
       {conversations.map((conv) => {
-        // Ensure we have a valid id
         if (!conv.id) {
           console.error('Conversation missing id:', conv);
           return null;

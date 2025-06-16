@@ -6,7 +6,6 @@ DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions" # Example URL,
 
 if not DEEPSEEK_API_KEY:
     print("Warning: DEEPSEEK_API_KEY not found in environment variables. Deepseek client will not work.")
-    # raise ValueError("DEEPSEEK_API_KEY not found in environment variables")
 
 MODEL_NAME = "deepseek-chat"
 
@@ -21,7 +20,6 @@ def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", 
 
     messages = []
     
-    # Only add system prompt if chat history is empty or doesn't already contain a system message
     if system_prompt and (not chat_history or not any(msg.get("role") == "system" for msg in chat_history)):
         messages.append({"role": "system", "content": system_prompt})
     
@@ -38,7 +36,7 @@ def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", 
 
     try:
         response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
-        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+        response.raise_for_status()
         
         response_json = response.json()
         if response_json.get("choices") and len(response_json["choices"]) > 0:
@@ -62,10 +60,9 @@ if __name__ == '__main__':
         response = get_deepseek_response(test_prompt)
         print(f"Deepseek's response:\n{response}")
 
-        # Test with history and system prompt
         system = "You are a master programmer who loves Python."
         history = [
-            {"role": "system", "content": system},  # System prompt already in history
+            {"role": "system", "content": system},
             {"role": "user", "content": "What is your favorite programming language?"},
             {"role": "assistant", "content": "Python, of course! It's versatile and elegant."}
         ]

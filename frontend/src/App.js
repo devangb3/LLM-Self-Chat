@@ -8,7 +8,6 @@ import ChatPage from './pages/ChatPage';
 import { Box, AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 
-// Basic Layout Structure
 function MainLayout({ children }) {
   const navigate = useNavigate();
 

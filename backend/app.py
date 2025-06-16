@@ -326,16 +326,14 @@ def update_api_keys():
         data = request.json
         updates = {}
         
-        # Only update keys that are provided in the request
         for model in ["claude", "gemini", "openai", "deepseek"]:
             key = data.get(f"{model}_api_key")
-            if key is not None and key.strip():  # Only update if key is provided and not empty
+            if key is not None and key.strip():
                 updates[f"{model}_api_key"] = User.encrypt_api_key(key)
 
         if not updates:
             return jsonify({"error": "No valid API keys provided"}), 400
 
-        # Use $set to update only the provided keys
         result = db.users.update_one(
             {"_id": current_user.id},
             {"$set": updates}
@@ -357,11 +355,9 @@ def update_api_keys():
 def create_conversation():
     try:
         data = request.json
-        # Add user_id to conversation
         data["user_id"] = current_user.id
         new_conv_model = Conversation(**data)
         
-        # Validate LLM names and check if user has API keys for them
         available_models = current_user.get_available_models()
         for llm_name in new_conv_model.llm_participants:
             if llm_name not in ALL_LLMS:
@@ -375,7 +371,6 @@ def create_conversation():
 
         app.logger.info(f"Conversation created with ID: {created_id}")
         
-        # Optionally, send a starting message from the first LLM
         if data.get("start_conversation", False) and new_conv_model.llm_participants:
             first_llm_name = new_conv_model.llm_participants[0]
             llm_to_call = ALL_LLMS.get(first_llm_name)
@@ -406,7 +401,6 @@ def create_conversation():
 @login_required
 def get_conversations():
     try:
-        # Get conversations for the current user
         conv_cursor = db.conversations.find({"user_id": current_user.id}).sort("created_at", -1)
         conversations_list = []
         for conv_doc_db in conv_cursor:
@@ -438,7 +432,6 @@ def get_conversation_details(conversation_id: str):
         for msg_doc_db in messages_cursor:
             messages_list.append(Message.from_db_document(msg_doc_db).model_dump(mode='json'))
         
-        # Combine conversation details with its messages
         conv_response = conversation_model.model_dump(mode='json')
         conv_response['messages'] = messages_list
         return jsonify(conv_response)
@@ -456,12 +449,10 @@ def delete_conversation(conversation_id: str):
         if not conversation_id or not isinstance(conversation_id, str):
             return jsonify({"error": "Invalid conversation_id format, must be a string."}), 400
 
-        # Delete the conversation
         result = db.conversations.delete_one({"_id": conversation_id})
         if result.deleted_count == 0:
             return jsonify({"error": "Conversation not found"}), 404
             
-        # Delete all messages associated with this conversation
         db.messages.delete_many({"conversation_id": conversation_id})
         
         return jsonify({"message": "Conversation and associated messages deleted successfully"})
@@ -471,4 +462,4 @@ def delete_conversation(conversation_id: str):
         return jsonify({"error": "An unexpected error occurred while deleting the conversation."}), 500
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001) # Using port 5001 to avoid conflict with React dev server 
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)

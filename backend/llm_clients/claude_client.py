@@ -5,7 +5,6 @@ ANTHROPIC_API_KEY = os.getenv("CLAUDE_API_KEY")
 
 if not ANTHROPIC_API_KEY:
     print("Warning: CLAUDE_API_KEY not found in environment variables. Claude client will not work.")
-    # raise ValueError("CLAUDE_API_KEY not found in environment variables")
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
@@ -45,8 +44,7 @@ if __name__ == '__main__':
             {"role": "user", "content": "What was my previous question?"},
             {"role": "assistant", "content": "You asked for a fun fact about AI."}
         ]
-        # response = get_claude_response(test_prompt, chat_history=history, system_prompt="You are a helpful AI historian.")
-        response = get_claude_response(test_prompt) # Default call
+        response = get_claude_response(test_prompt, chat_history=history, system_prompt="You are a helpful AI historian.")
         print(f"Claude's response: {response}")
 
         history_test_prompt = "Based on our previous conversation, what should I ask next?"

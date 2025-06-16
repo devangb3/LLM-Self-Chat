@@ -7,15 +7,14 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
-// A basic MUI theme, can be customized further
 const theme = createTheme({
   palette: {
-    mode: 'light', // or 'dark'
+    mode: 'light',
     primary: {
-      main: '#1976d2', // MUI default blue
+      main: '#1976d2',
     },
     secondary: {
-      main: '#dc004e', // MUI default pink
+      main: '#dc004e',
     },
   },
 });
@@ -25,14 +24,11 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider theme={theme}>
-        <CssBaseline /> {/* Ensures consistent baseline styling */} 
+        <CssBaseline />
         <App />
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

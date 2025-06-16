@@ -8,7 +8,7 @@ if not OPENAI_API_KEY:
 
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
-MODEL_NAME = "gpt-4o-mini-2024-07-18" # Or other preferred model like "gpt-4"
+MODEL_NAME = "gpt-4o-mini-2024-07-18"
 
 def get_chatgpt_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=5000):
     if not client:

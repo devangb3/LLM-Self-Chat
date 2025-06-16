@@ -9,7 +9,6 @@ from flask_login import UserMixin
 
 load_dotenv()
 
-# Get encryption key from environment or generate a new one
 ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', Fernet.generate_key())
 cipher_suite = Fernet(ENCRYPTION_KEY)
 
@@ -20,7 +19,6 @@ class User(BaseModel, UserMixin):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
-    # Flask-Login required attributes
     is_active: bool = True
     is_authenticated: bool = True
     is_anonymous: bool = False
