@@ -1,8 +1,8 @@
 import os
-import requests # Using requests for now, replace if a specific SDK is available
+import requests
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions" # Example URL, please verify
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 if not DEEPSEEK_API_KEY:
     print("Warning: DEEPSEEK_API_KEY not found in environment variables. Deepseek client will not work.")
