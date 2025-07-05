@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, ListItem, ListItemButton, ListItemText, Typography, Box, Tooltip, IconButton, Divider, ListItemIcon } from '@mui/material';
+import { List, ListItem, ListItemButton, ListItemText, Typography, Box, IconButton, Divider, ListItemIcon } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ChatIcon from '@mui/icons-material/Chat';
 
