@@ -19,15 +19,23 @@ class User(BaseModel, UserMixin):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
-    is_active: bool = True
-    is_authenticated: bool = True
-    is_anonymous: bool = False
-    
     # Encrypted API keys
     claude_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     deepseek_api_key: Optional[str] = None
+
+    @property
+    def is_active(self) -> bool:
+        return True
+
+    @property
+    def is_authenticated(self) -> bool:
+        return True
+
+    @property
+    def is_anonymous(self) -> bool:
+        return False
 
     def get_id(self) -> str:
         """Required by Flask-Login"""
@@ -40,7 +48,6 @@ class User(BaseModel, UserMixin):
             "password_hash": self.password_hash,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "is_active": self.is_active,
             "claude_api_key": self.claude_api_key,
             "gemini_api_key": self.gemini_api_key,
             "openai_api_key": self.openai_api_key,
@@ -55,7 +62,6 @@ class User(BaseModel, UserMixin):
             password_hash=doc["password_hash"],
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
-            is_active=doc.get("is_active", True),
             claude_api_key=doc.get("claude_api_key"),
             gemini_api_key=doc.get("gemini_api_key"),
             openai_api_key=doc.get("openai_api_key"),

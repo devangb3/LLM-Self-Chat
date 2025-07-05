@@ -1,21 +1,13 @@
-import os
 from google import genai
 from google.genai import types
 
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not GEMINI_API_KEY:
-    print("Warning: GEMINI_API_KEY not found in environment variables. Gemini client will not work.")
-    # raise ValueError("GEMINI_API_KEY not found in environment variables")
-
 MODEL_NAME = "gemini-2.5-flash-preview-05-20" 
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
-def get_gemini_response(prompt, system_prompt=None, chat_history=None):
-    if not client:
+def get_gemini_response(api_key, prompt, system_prompt=None, chat_history=None):
+    if not api_key:
         return "Gemini API key not configured."
     try:
+        client = genai.Client(api_key=api_key)
         # Build the conversation history as a string
         conversation = []
         

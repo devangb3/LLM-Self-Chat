@@ -1,20 +1,12 @@
-import os
 import anthropic
-
-ANTHROPIC_API_KEY = os.getenv("CLAUDE_API_KEY")
-
-if not ANTHROPIC_API_KEY:
-    print("Warning: CLAUDE_API_KEY not found in environment variables. Claude client will not work.")
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
 MODEL_NAME = "claude-3-5-haiku-20241022"
 
-def get_claude_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
-    if not client:
+def get_claude_response(api_key, prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
+    if not api_key:
         return "Claude API key not configured."
     try:
-        
+        client = anthropic.Anthropic(api_key=api_key)
         messages_for_api = []
         if chat_history:
             messages_for_api.extend(chat_history)

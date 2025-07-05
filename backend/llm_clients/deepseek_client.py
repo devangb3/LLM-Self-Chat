@@ -1,20 +1,14 @@
-import os
 import requests
 
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-
-if not DEEPSEEK_API_KEY:
-    print("Warning: DEEPSEEK_API_KEY not found in environment variables. Deepseek client will not work.")
-
 MODEL_NAME = "deepseek-chat"
 
-def get_deepseek_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
-    if not DEEPSEEK_API_KEY:
+def get_deepseek_response(api_key, prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=1024):
+    if not api_key:
         return "Deepseek API key not configured."
     
     headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 

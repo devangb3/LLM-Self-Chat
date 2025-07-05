@@ -14,17 +14,14 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 import bcrypt
 from functools import wraps
 
-load_dotenv() # Load environment variables from .env
+from config import config
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "supersecretkey") # Add a Flask secret key for session management
-socketio = SocketIO(app, cors_allowed_origins="*") # Allow all origins for now, restrict in production
+app.config["SECRET_KEY"] = config.FLASK_SECRET_KEY
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:5874")
 
 # MongoDB Setup
-mongo_uri = os.getenv("MONGODB_URI")
-if not mongo_uri:
-    raise ValueError("MONGODB_URI not found in environment variables")
-client = MongoClient(mongo_uri)
+client = MongoClient(config.MONGODB_URI)
 db = client.llm_chat_app 
 
 # Flask-Login setup
@@ -188,7 +185,13 @@ def handle_trigger_next_llm(data):
         
         app.logger.info(f"[App TriggerNextLLM] Calling LLM {next_llm_name} with prompt: '{current_prompt_text[:100]}...' and history of {len(chat_history_for_llm)} messages.")
 
+        api_key = getattr(current_user, f"{next_llm_name}_api_key", None)
+        if not api_key:
+            emit('error', {'message': f'API key for {next_llm_name} not found.'})
+            return
+
         llm_response_text = llm_to_call(
+            api_key=User.decrypt_api_key(api_key),
             prompt=current_prompt_text, 
             system_prompt=system_prompt, 
             chat_history=chat_history_for_llm
@@ -354,6 +357,7 @@ def update_api_keys():
 @login_required
 def create_conversation():
     try:
+        
         data = request.json
         data["user_id"] = current_user.id
         new_conv_model = Conversation(**data)
@@ -363,6 +367,7 @@ def create_conversation():
             if llm_name not in ALL_LLMS:
                 return jsonify({"error": f"Unsupported LLM: {llm_name}"}), 400
             if not available_models.get(llm_name):
+                app.logger.error(f"Available models: {available_models}")
                 return jsonify({"error": f"No API key provided for {llm_name}"}), 400
 
         db_doc = new_conv_model.to_db_document()
@@ -375,8 +380,17 @@ def create_conversation():
             first_llm_name = new_conv_model.llm_participants[0]
             llm_to_call = ALL_LLMS.get(first_llm_name)
             if llm_to_call:
+                api_key = getattr(current_user, f"{first_llm_name}_api_key", None)
+                if not api_key:
+                    return jsonify({"error": f"API key for {first_llm_name} not found"}), 400
+
                 initial_prompt = "Hello! Please introduce yourself based on the system prompt and start the conversation."
-                llm_response_text = llm_to_call(prompt=initial_prompt, system_prompt=new_conv_model.system_prompt, chat_history=[])
+                llm_response_text = llm_to_call(
+                    api_key=User.decrypt_api_key(api_key),
+                    prompt=initial_prompt, 
+                    system_prompt=new_conv_model.system_prompt, 
+                    chat_history=[]
+                )
                 
                 llm_start_msg_data = {
                     "conversation_id": created_id,
@@ -415,6 +429,7 @@ def get_conversations():
         return jsonify({"error": "Failed to fetch conversations"}), 500
 
 @app.route("/api/conversations/<conversation_id>", methods=["GET"])
+@login_required
 def get_conversation_details(conversation_id: str):
     try:
         if not conversation_id or not isinstance(conversation_id, str):
@@ -444,6 +459,7 @@ def get_conversation_details(conversation_id: str):
         return jsonify({"error": "An unexpected error occurred while fetching conversation details."}), 500
 
 @app.route("/api/conversations/<conversation_id>", methods=["DELETE"])
+@login_required
 def delete_conversation(conversation_id: str):
     try:
         if not conversation_id or not isinstance(conversation_id, str):

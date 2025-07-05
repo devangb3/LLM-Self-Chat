@@ -1,19 +1,12 @@
-import os
 from openai import OpenAI
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-if not OPENAI_API_KEY:
-    print("Warning: OPENAI_API_KEY not found in environment variables. ChatGPT client will not work.")
-
-client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 MODEL_NAME = "gpt-4o-mini-2024-07-18"
 
-def get_chatgpt_response(prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=5000):
-    if not client:
+def get_chatgpt_response(api_key, prompt, system_prompt="You are a helpful assistant.", chat_history=None, max_tokens=5000):
+    if not api_key:
         return "OpenAI API key not configured."
     try:
+        client = OpenAI(api_key=api_key)
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
