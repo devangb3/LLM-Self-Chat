@@ -3,13 +3,14 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
+  Typography,
   DialogTitle,
   TextField,
   Button,
   FormControl,
   InputLabel,
   Select,
+  Box,
   MenuItem,
   Checkbox,
   ListItemText,
@@ -66,65 +67,68 @@ const CreateConversationDialog = ({ open, onClose, onCreate, availableLLMs }) =>
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create New Conversation</DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{mb:2}}>
-          Configure the details for the new LLM conversation.
-        </DialogContentText>
-        <TextField
-          autoFocus
-          margin="dense"
-          id="conversation-name"
-          label="Conversation Name (Optional)"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={conversationName}
-          onChange={(e) => setConversationName(e.target.value)}
-          sx={{mb: 2}}
-        />
-        <TextField
-          margin="dense"
-          id="new-system-prompt"
-          label="System Prompt"
-          type="text"
-          fullWidth
-          multiline
-          rows={4}
-          variant="outlined"
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          sx={{mb: 2}}
-        />
-        <FormControl fullWidth sx={{mb: 2}}>
-          <InputLabel id="llm-participants-label">LLM Participants</InputLabel>
-          <Select
-            labelId="llm-participants-label"
-            id="llm-participants-select"
-            multiple
-            value={selectedLLMs}
-            onChange={handleLLMChange}
-            input={<OutlinedInput label="LLM Participants" />}
-            renderValue={(selected) => selected.join(', ')}
-            MenuProps={MenuProps}
-          >
-            {availableLLMs.map((name) => (
-              <MenuItem key={name} value={name}>
-                <Checkbox checked={selectedLLMs.indexOf(name) > -1} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControlLabel
-            control={<Switch checked={startConversation} onChange={(e) => setStartConversation(e.target.checked)} />}
-            label="Let the first LLM start the conversation"
-        />
+      <DialogTitle>
+        <Typography variant="h6" component="div">
+          New Conversation
+        </Typography>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Box component="form" noValidate autoComplete="off">
+          <TextField
+            autoFocus
+            margin="dense"
+            id="conversation-name"
+            label="Conversation Name (Optional)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={conversationName}
+            onChange={(e) => setConversationName(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+          <TextField
+            margin="dense"
+            id="new-system-prompt"
+            label="System Prompt"
+            type="text"
+            fullWidth
+            multiline
+            rows={4}
+            variant="outlined"
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="llm-participants-label">LLM Participants</InputLabel>
+            <Select
+              labelId="llm-participants-label"
+              id="llm-participants-select"
+              multiple
+              value={selectedLLMs}
+              onChange={handleLLMChange}
+              input={<OutlinedInput label="LLM Participants" />}
+              renderValue={(selected) => selected.join(', ')}
+              MenuProps={MenuProps}
+            >
+              {availableLLMs.map((name) => (
+                <MenuItem key={name} value={name}>
+                  <Checkbox checked={selectedLLMs.indexOf(name) > -1} />
+                  <ListItemText primary={name} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControlLabel
+              control={<Switch checked={startConversation} onChange={(e) => setStartConversation(e.target.checked)} />}
+              label="Let the first LLM start the conversation"
+          />
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      <DialogActions sx={{ p: '16px 24px' }}>
+        <Button onClick={onClose} color="secondary">Cancel</Button>
         <Button onClick={handleCreate} variant="contained" disabled={selectedLLMs.length === 0}>
-          Create Conversation
+          Create
         </Button>
       </DialogActions>
     </Dialog>

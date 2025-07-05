@@ -1,15 +1,15 @@
 import React from 'react';
-import { List, ListItem, ListItemButton, ListItemText, Typography, Box, Tooltip, IconButton } from '@mui/material';
+import { List, ListItem, ListItemButton, ListItemText, Typography, Box, Tooltip, IconButton, Divider, ListItemIcon } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const ConversationList = ({ conversations, selectedConversationId, onSelectConversation, onDeleteConversation }) => {
-  console.log('ConversationList props:', { conversations, selectedConversationId }); // Debug log
 
   if (!conversations || conversations.length === 0) {
     return (
       <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="subtitle2" color="text.secondary">
-          No conversations yet. Click the '+' icon to create one.
+        <Typography variant="body2" color="text.secondary">
+          No conversations yet.
         </Typography>
       </Box>
     );
@@ -17,42 +17,22 @@ const ConversationList = ({ conversations, selectedConversationId, onSelectConve
 
   const handleDelete = (e, conversationId) => {
     e.stopPropagation();
-    console.log('Delete clicked for conversation:', conversationId);
-    if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
       onDeleteConversation(conversationId);
     }
   };
 
-  const handleSelect = (conversationId) => {
-    console.log('Select clicked for conversation:', conversationId);
-    onSelectConversation(conversationId);
-  };
-
   return (
     <List sx={{ overflowY: 'auto', flexGrow: 1, p: 0 }}>
-      {conversations.map((conv) => {
-        if (!conv.id) {
-          console.error('Conversation missing id:', conv);
-          return null;
-        }
-        
-        return (
+      {conversations.map((conv) => (
+        <React.Fragment key={conv.id}>
           <ListItem
-            key={conv.id}
             disablePadding
             secondaryAction={
               <IconButton 
                 edge="end" 
                 aria-label="delete"
                 onClick={(e) => handleDelete(e, conv.id)}
-                size="small"
-                sx={{ 
-                  opacity: 0.7,
-                  '&:hover': {
-                    opacity: 1,
-                    color: 'error.main'
-                  }
-                }}
               >
                 <DeleteIcon />
               </IconButton>
@@ -60,24 +40,31 @@ const ConversationList = ({ conversations, selectedConversationId, onSelectConve
           >
             <ListItemButton 
               selected={selectedConversationId === conv.id}
-              onClick={() => handleSelect(conv.id)}
-            >
-              <ListItemText 
-                primaryTypographyProps={{ noWrap: true }} 
-                secondaryTypographyProps={{ noWrap: true, component: 'span' }}
-                primary={conv.name || `Chat with ${conv.llm_participants?.join(', ') || 'N/A'}`}
-                secondary={
-                  <Tooltip title={conv.system_prompt}>
-                    <Typography variant="body2" noWrap component="span">
-                      System: {conv.system_prompt ? `${conv.system_prompt.substring(0, 30)}...` : 'Default'}
-                    </Typography>
-                  </Tooltip>
+              onClick={() => onSelectConversation(conv.id)}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.light',
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                  }
                 }
+              }}
+            >
+              <ListItemIcon sx={{minWidth: 36, color: 'inherit'}}>
+                <ChatIcon />
+              </ListItemIcon>
+              <ListItemText 
+                primary={conv.name || `Conversation`}
+                secondary={conv.llm_participants?.join(', ')}
+                primaryTypographyProps={{ noWrap: true, fontWeight: 'medium' }} 
+                secondaryTypographyProps={{ noWrap: true }}
               />
             </ListItemButton>
           </ListItem>
-        );
-      })}
+          <Divider variant="inset" component="li" />
+        </React.Fragment>
+      ))}
     </List>
   );
 };

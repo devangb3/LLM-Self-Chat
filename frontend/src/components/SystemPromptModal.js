@@ -3,17 +3,20 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   TextField,
   Button,
+  Typography,
+  Box
 } from '@mui/material';
 
 const SystemPromptModal = ({ open, onClose, currentPrompt, onSetPrompt, disabled }) => {
   const [prompt, setPrompt] = useState(currentPrompt || '');
 
   useEffect(() => {
-    setPrompt(currentPrompt || '');
+    if (open) {
+      setPrompt(currentPrompt || '');
+    }
   }, [currentPrompt, open]);
 
   const handleSet = () => {
@@ -22,28 +25,32 @@ const SystemPromptModal = ({ open, onClose, currentPrompt, onSetPrompt, disabled
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Set System Prompt</DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{mb: 2}}>
-          Set the system prompt that will guide the behavior of the LLMs in this conversation.
-        </DialogContentText>
-        <TextField
-          autoFocus
-          margin="dense"
-          id="system-prompt"
-          label="System Prompt"
-          type="text"
-          fullWidth
-          multiline
-          rows={6}
-          variant="outlined"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          disabled={disabled}
-        />
+      <DialogTitle>
+        <Typography variant="h6" component="div">
+          System Prompt
+        </Typography>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Box component="form" noValidate autoComplete="off">
+          <TextField
+            autoFocus
+            margin="dense"
+            id="system-prompt"
+            label="System Prompt"
+            type="text"
+            fullWidth
+            multiline
+            rows={8}
+            variant="outlined"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            disabled={disabled}
+            helperText="This prompt guides the behavior of the LLMs in the conversation."
+          />
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      <DialogActions sx={{ p: '16px 24px' }}>
+        <Button onClick={onClose} color="secondary">Cancel</Button>
         <Button onClick={handleSet} variant="contained" disabled={disabled || prompt === currentPrompt}>
           Set Prompt
         </Button>
