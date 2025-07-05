@@ -34,7 +34,7 @@ import ConversationList from '../components/ConversationList';
 import SystemPromptModal from '../components/SystemPromptModal';
 import CreateConversationDialog from '../components/CreateConversationDialog';
 
-import { getSocket } from '../services/socket';
+import { getAuthenticatedSocket } from '../services/socket';
 import * as api from '../services/api';
 import authService from '../services/authService';
 
@@ -119,7 +119,12 @@ const ChatPage = () => {
     }, [paramConvId, fetchConversationDetails]);
 
     useEffect(() => {
-        socket.current = getSocket();
+        socket.current = getAuthenticatedSocket();
+
+        if (!socket.current) {
+            setError('Unable to establish WebSocket connection. Please check your authentication.');
+            return;
+        }
 
         const handleMessageUpdate = (newMessage) => {
             if (currentConversation && newMessage.conversation_id === currentConversation.id) {
@@ -134,25 +139,37 @@ const ChatPage = () => {
             }
         };
 
+        const handleError = (err) => {
+            setError(err.message || 'A socket error occurred.');
+            if (err.message === 'Authentication required') {
+                authService.logout();
+                navigate('/login');
+            }
+        };
+
         socket.current.on('message_update', handleMessageUpdate);
         socket.current.on('system_prompt_updated', handleSystemPromptUpdated);
-        socket.current.on('error', (err) => {
-            setError(err.message || 'A socket error occurred.');
-        });
+        socket.current.on('error', handleError);
 
         return () => {
-            socket.current.off('message_update', handleMessageUpdate);
-            socket.current.off('system_prompt_updated', handleSystemPromptUpdated);
-            socket.current.off('error');
+            if (socket.current) {
+                socket.current.off('message_update', handleMessageUpdate);
+                socket.current.off('system_prompt_updated', handleSystemPromptUpdated);
+                socket.current.off('error', handleError);
+            }
         };
-    }, [currentConversation]);
+    }, [currentConversation, navigate]);
 
     const handleTriggerNextLLM = () => {
         if (!currentConversation || !currentConversation.id) {
             setError('Please select a conversation first.');
             return;
         }
-        const socket = getSocket();
+        const socket = getAuthenticatedSocket();
+        if (!socket) {
+            setError('WebSocket connection not available. Please refresh the page.');
+            return;
+        }
         socket.emit('trigger_next_llm', { conversation_id: currentConversation.id });
     };
 
@@ -201,8 +218,15 @@ const ChatPage = () => {
     };
     
     const handleSetSystemPrompt = (newPrompt) => {
-        if (!currentConversation || !socket.current) return;
-        socket.current.emit('set_system_prompt', {
+        if (!currentConversation) return;
+        
+        const socket = getAuthenticatedSocket();
+        if (!socket) {
+            setError('WebSocket connection not available. Please refresh the page.');
+            return;
+        }
+        
+        socket.emit('set_system_prompt', {
             conversation_id: currentConversation.id, 
             prompt: newPrompt 
         });

@@ -50,8 +50,8 @@ function MainLayout({ children }) {
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
-    const user = authService.getCurrentUser();
-    if (!user) {
+    const isAuthenticated = authService.isAuthenticated();
+    if (!isAuthenticated) {
         return <Navigate to="/login" />;
     }
     return children;

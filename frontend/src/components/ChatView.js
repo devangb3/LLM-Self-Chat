@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Box, Paper, Typography, Avatar, Chip, Stack } from '@mui/material';
-import { blue, green, purple, orange } from '@mui/material/colors';
+import { Box, Paper, Typography, Avatar, Stack } from '@mui/material';
+import { blue } from '@mui/material/colors';
 
 const stringToColor = (str) => {
     let hash = 0;

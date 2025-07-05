@@ -41,23 +41,3 @@ def get_gemini_response(api_key, prompt, system_prompt=None, chat_history=None):
         if hasattr(e, 'message'):
             return f"Error from Gemini: {e.message}"
         return f"Error from Gemini: {str(e)}"
-
-if __name__ == '__main__':
-    if GEMINI_API_KEY:
-        test_prompt = "Hello, Gemini! What is the future of AI?"
-        print(f"Sending prompt to Gemini: {test_prompt}")
-        system_instruction = "You are a futuristic AI. Be creative."
-        response = get_gemini_response(test_prompt)
-        print(f"Gemini's response: {response}")
-
-        # Test with simple history
-        history = [
-            {"role": "user", "parts": ["Hi"]},
-            {"role": "model", "parts": ["Hello! How can I help you today?"]}
-        ]
-        test_prompt_with_history = "Tell me more about large language models."
-        print(f"Sending prompt to Gemini with history: {test_prompt_with_history}")
-        response_hist = get_gemini_response(test_prompt_with_history, chat_history=history)
-        print(f"Gemini's response (with history): {response_hist}")
-    else:
-        print("Skipping Gemini test as API key is not set.") 

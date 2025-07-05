@@ -2,14 +2,15 @@ from datetime import datetime, timezone
 from typing import Dict, Optional
 from pydantic import BaseModel, EmailStr, Field
 from cryptography.fernet import Fernet
-import os
-from dotenv import load_dotenv
 import uuid
 from flask_login import UserMixin
+from config import config
 
-load_dotenv()
 
-ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', Fernet.generate_key())
+ENCRYPTION_KEY = config.ENCRYPTION_KEY or Fernet.generate_key()
+if isinstance(ENCRYPTION_KEY, str):
+    ENCRYPTION_KEY = ENCRYPTION_KEY.encode()
+
 cipher_suite = Fernet(ENCRYPTION_KEY)
 
 class User(BaseModel, UserMixin):
