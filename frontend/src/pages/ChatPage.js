@@ -26,6 +26,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import LogoutIcon from '@mui/icons-material/Logout';
+import KeyIcon from '@mui/icons-material/Key';
 
 import { ColorModeContext } from '../contexts/ThemeContext';
 
@@ -284,6 +285,14 @@ const ChatPage = () => {
                     <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
                         {currentConversation ? `Chat with: ${currentConversation.llm_participants?.join(', ') || 'N/A'}` : 'LLM Auditor Chat'}
                     </Typography>
+                    <Button 
+                        color="inherit" 
+                        onClick={() => navigate('/api-keys')}
+                        startIcon={<KeyIcon />}
+                        sx={{ mr: 1 }}
+                    >
+                        Manage API Keys
+                    </Button>
                     <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
                         {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                     </IconButton>
