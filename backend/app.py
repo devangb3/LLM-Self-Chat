@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_login import LoginManager, login_required, current_user
+from flask_wtf.csrf import CSRFProtect
 from functools import wraps
 
 from config import config
@@ -13,6 +14,7 @@ from services.conversation_service import ConversationService
 from controllers.user_controller import UserController
 from controllers.conversation_controller import ConversationController
 from controllers.socket_controller import SocketController
+from security import configure_security, handle_csrf_error, handle_security_error
 
 try:
     config.validate()
@@ -22,6 +24,11 @@ except ValueError as e:
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = config.FLASK_SECRET_KEY
+
+csrf = CSRFProtect(app)
+
+configure_security(app, csrf)
+
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:5874")
 
 db = db_connection.db
@@ -43,6 +50,9 @@ login_manager.session_protection = 'strong'
 
 CORS(app, resources={r"/*": {"origins": "http://localhost:5874", "supports_credentials": True}})
 
+app.register_error_handler(400, handle_csrf_error)
+app.register_error_handler(403, handle_security_error)
+
 from models.user import User
 
 @login_manager.user_loader
@@ -61,6 +71,10 @@ def socket_auth_required(f):
 @app.route("/")
 def index():
     return jsonify({"message": "LLM Chat App Backend Running"})
+
+@app.route("/api/csrf-token", methods=["GET"])
+def get_csrf_token():
+    return jsonify({"csrf_token": csrf._get_token()})
 
 # Socket event handlers
 @socketio.on('connect')

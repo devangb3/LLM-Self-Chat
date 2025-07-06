@@ -4,6 +4,30 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 axios.defaults.withCredentials = true;
 
+let csrfToken = null;
+
+const getCsrfToken = async () => {
+    if (!csrfToken) {
+        try {
+            const response = await axios.get(`${API_URL}/csrf-token`);
+            csrfToken = response.data.csrf_token;
+        } catch (error) {
+            console.error('Failed to get CSRF token:', error);
+        }
+    }
+    return csrfToken;
+};
+
+axios.interceptors.request.use(async (config) => {
+    if (config.method !== 'get' && !config.url.includes('socket')) {
+        const token = await getCsrfToken();
+        if (token) {
+            config.headers['X-CSRFToken'] = token;
+        }
+    }
+    return config;
+});
+
 const authService = {
     async register(email, password) {
         const response = await axios.post(`${API_URL}/auth/register`, {
@@ -31,6 +55,7 @@ const authService = {
     logout() {
         localStorage.removeItem('user');
         localStorage.removeItem('accessToken');
+        csrfToken = null;
         return axios.post(`${API_URL}/auth/logout`);
     },
 
@@ -48,13 +73,11 @@ const authService = {
         return !!(user && token);
     },
 
-    // Check if token is expired (basic check)
     isTokenExpired() {
         const token = this.getAccessToken();
         if (!token) return true;
         
         try {
-            // Decode JWT token to check expiration
             const payload = JSON.parse(atob(token.split('.')[1]));
             const currentTime = Date.now() / 1000;
             return payload.exp < currentTime;
@@ -64,7 +87,6 @@ const authService = {
         }
     },
 
-    // Refresh token by re-authenticating
     async refreshToken() {
         const user = this.getCurrentUser();
         if (!user) {
@@ -104,6 +126,10 @@ const authService = {
 
         const response = await axios.get(`${API_URL}/auth/user`);
         return response.data;
+    },
+
+    clearCsrfToken() {
+        csrfToken = null;
     }
 };
 
