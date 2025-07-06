@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from google.cloud import secretmanager
 
+
 load_dotenv()
 PROJECT_ID = os.getenv("PROJECT_ID")
 
@@ -9,25 +10,31 @@ def get_gcp_secret(secret_id, version_id="latest"):
     """
     Retrieves a secret from Google Cloud Secret Manager.
     """
-    client = secretmanager.SecretManagerServiceClient()
-
-    name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/{version_id}"
-
     try:
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/{version_id}"
         response = client.access_secret_version(request={"name": name})
         return response.payload.data.decode("UTF-8")
+    except ImportError:
+        print(f"Warning: google-cloud-secret-manager not installed, using environment variables")
+        return None
     except Exception as e:
-        raise RuntimeError(f"Failed to access secret {secret_id}: {e}")
+        print(f"Warning: Failed to access secret {secret_id}: {e}")
+        return None
 
 class Config:
     if PROJECT_ID:
-        FLASK_SECRET_KEY = get_gcp_secret('flask-secret-key')
-        ENCRYPTION_KEY = get_gcp_secret('api-encryption-key')
+        flask_secret = get_gcp_secret('flask-secret-key')
+        encryption_key = get_gcp_secret('api-encryption-key')
+        mongodb_uri = get_gcp_secret('mongodb-uri')
+        
+        FLASK_SECRET_KEY = flask_secret or os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')
+        ENCRYPTION_KEY = encryption_key or os.getenv('ENCRYPTION_KEY')
+        MONGODB_URI = mongodb_uri or os.getenv("MONGODB_URI")
     else:
         FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')
         ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
-    
-    MONGODB_URI = os.getenv("MONGODB_URI")
+        MONGODB_URI = os.getenv("MONGO_LOCAL_URI")
     
     @classmethod
     def validate(cls):

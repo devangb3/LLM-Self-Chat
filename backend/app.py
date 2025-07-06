@@ -2,8 +2,9 @@ from flask import Flask, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_login import LoginManager, login_required, current_user
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from functools import wraps
+import os
 
 from config import config
 from database.connection import db_connection
@@ -25,11 +26,19 @@ except ValueError as e:
 app = Flask(__name__)
 app.config["SECRET_KEY"] = config.FLASK_SECRET_KEY
 
+# Configure CSRF protection
+app.config['WTF_CSRF_ENABLED'] = True
+app.config['WTF_CSRF_TIME_LIMIT'] = 3600
+app.config['WTF_CSRF_SSL_STRICT'] = False  # Allow HTTP for development
+
 csrf = CSRFProtect(app)
 
 configure_security(app, csrf)
 
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:5874")
+# Get CORS origins from environment or use default
+CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5874').split(',')
+
+socketio = SocketIO(app, cors_allowed_origins=CORS_ORIGINS)
 
 db = db_connection.db
 
@@ -48,7 +57,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.session_protection = 'strong'
 
-CORS(app, resources={r"/*": {"origins": "http://localhost:5874", "supports_credentials": True}})
+CORS(app, resources={r"/*": {"origins": CORS_ORIGINS, "supports_credentials": True}})
 
 app.register_error_handler(400, handle_csrf_error)
 app.register_error_handler(403, handle_security_error)
@@ -74,7 +83,7 @@ def index():
 
 @app.route("/api/csrf-token", methods=["GET"])
 def get_csrf_token():
-    return jsonify({"csrf_token": csrf._get_token()})
+    return jsonify({"csrf_token": generate_csrf()})
 
 # Socket event handlers
 @socketio.on('connect')
@@ -139,4 +148,8 @@ def delete_conversation(conversation_id: str):
     return conversation_controller.delete_conversation(conversation_id)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    # Get port from environment or default to 8080 for Cloud Run
+    port = int(os.getenv('PORT', 8080))
+    debug = os.getenv('FLASK_ENV') == 'development'
+    
+    socketio.run(app, debug=debug, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
