@@ -3,40 +3,69 @@ import { addCsrfInterceptor, clearCsrfToken, refreshCsrfToken } from './csrfServ
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
-axios.defaults.withCredentials = true;
+console.log('🔧 Auth Service - API URL:', API_URL);
 
-// Add CSRF interceptor to the default axios instance
+// Create a dedicated axios instance for auth with explicit credential settings
+const authAxios = axios.create({
+    baseURL: API_URL,
+    withCredentials: true,
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
+
+axios.defaults.withCredentials = true;
+axios.defaults.timeout = 10000;
+
 addCsrfInterceptor(axios);
+addCsrfInterceptor(authAxios);
 
 const authService = {
     async register(email, password) {
-        const response = await axios.post(`${API_URL}/auth/register`, {
-            email,
-            password
-        });
-        return response.data;
+        console.log('Auth Service - Registering user:', email);
+        try {
+            const response = await authAxios.post('/auth/register', {
+                email,
+                password
+            });
+            console.log('Auth Service - Registration successful:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Auth Service - Registration failed:', error.response?.data);
+            throw error;
+        }
     },
 
     async login(email, password) {
-        const response = await axios.post(`${API_URL}/auth/login`, {
-            email,
-            password
-        });
-        if (response.data.user) {
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            // Store JWT token for WebSocket authentication
-            if (response.data.access_token) {
-                localStorage.setItem('accessToken', response.data.access_token);
+        console.log('Auth Service - Logging in user:', email);
+        try {
+            const response = await authAxios.post('/auth/login', {
+                email,
+                password
+            });
+            console.log('Auth Service - Login successful:', response.data);
+            if (response.data.user) {
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                // Store JWT token for WebSocket authentication
+                if (response.data.access_token) {
+                    localStorage.setItem('accessToken', response.data.access_token);
+                }
             }
+            return response.data;
+        } catch (error) {
+            console.error('Auth Service - Login failed:', error.response?.data);
+            throw error;
         }
-        return response.data;
     },
 
     async logout() {
+        console.log('Auth Service - Logging out user');
         try {
-            await axios.post(`${API_URL}/auth/logout`);
+            await authAxios.post('/auth/logout');
+            console.log('Auth Service - Logout successful');
         } catch (error) {
-            console.error('Logout error:', error);
+            console.error('Auth Service - Logout error:', error);
         } finally {
             localStorage.removeItem('user');
             localStorage.removeItem('accessToken');
@@ -74,7 +103,7 @@ const authService = {
     },
 
     async getUserInfo() {
-        const response = await axios.get(`${API_URL}/auth/user`);
+        const response = await authAxios.get('/auth/user');
         return response.data;
     },
 
@@ -82,7 +111,7 @@ const authService = {
         const user = this.getCurrentUser();
         if (!user) throw new Error('User not authenticated');
 
-        const response = await axios.post(`${API_URL}/auth/api-keys`, apiKeys);
+        const response = await authAxios.post('/auth/api-keys', apiKeys);
         return response.data;
     },
 

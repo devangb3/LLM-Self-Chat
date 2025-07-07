@@ -1,0 +1,27 @@
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--tag'
+      - '$_IMAGE_NAME'
+      - '--build-arg'
+      - 'REACT_APP_API_URL=$_REACT_APP_API_URL'
+      - '.'
+    id: 'Build'
+
+  # Step 2: Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '$_IMAGE_NAME'
+    id: 'Push'
+
+# Define the images to be pushed to the registry
+images:
+  - '$_IMAGE_NAME'
+
+# Allow substitution variables
+substitutions:
+  _IMAGE_NAME: 'gcr.io/your-project-id/image-name:latest'
+  _REACT_APP_API_URL: 'https://api.example.com'

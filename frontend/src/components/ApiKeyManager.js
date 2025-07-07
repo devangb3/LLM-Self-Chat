@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import {
@@ -21,23 +21,45 @@ const ApiKeyManager = () => {
         openai_api_key: '',
         deepseek_api_key: ''
     });
-    const [availableModels, setAvailableModels] = useState({});
+    const [availableModels, setAvailableModels] = useState({
+        claude: false,
+        gemini: false,
+        openai: false,
+        deepseek: false
+    });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    useEffect(() => {
-        loadUserInfo();
-    }, []);
-
-    const loadUserInfo = async () => {
+    const loadUserInfo = useCallback(async () => {
         try {
             const userInfo = await authService.getUserInfo();
-            setAvailableModels(userInfo.available_models);
+            console.log("Received user info:", userInfo);
+            
+            if (userInfo.message === 'Please use POST method to login') {
+                console.error('User is not authenticated, redirecting to login');
+                navigate('/login');
+                return;
+            }
+            
+            setAvailableModels(userInfo.available_models || {
+                claude: false,
+                gemini: false,
+                openai: false,
+                deepseek: false
+            });
         } catch (err) {
+            console.error('Failed to load user info:', err);
             setError('Failed to load user information');
+            if (err.response?.status === 401) {
+                navigate('/login');
+            }
         }
-    };
+    }, [navigate]);
+
+    useEffect(() => {
+        loadUserInfo();
+    }, [loadUserInfo]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

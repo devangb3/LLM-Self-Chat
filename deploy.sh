@@ -53,7 +53,7 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
     --concurrency 80 \
     --set-env-vars "FLASK_ENV=production" \
     --set-env-vars "PROJECT_ID=$PROJECT_ID" \
-    --set-env-vars "CORS_ORIGINS=https://$FRONTEND_SERVICE_NAME-$PROJECT_ID.a.run.app" \
+    --set-env-vars "CORS_ORIGINS=http://localhost:5874" \
     --set-secrets "MONGODB_URI=mongodb-uri:latest" \
     --set-secrets "FLASK_SECRET_KEY=flask-secret-key:latest" \
     --set-secrets "ENCRYPTION_KEY=api-encryption-key:latest"
