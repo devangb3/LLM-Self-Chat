@@ -375,7 +375,7 @@ const ChatPage = () => {
                 open={isCreateConvDialogOpen}
                 onClose={() => setIsCreateConvDialogOpen(false)}
                 onCreate={handleCreateConversation}
-                availableLLMs={["claude", "gemini", "chatgpt", "deepseek"]}
+                availableLLMs={["claude", "gemini", "openai", "deepseek"]}
             />
         </Box>
     );

@@ -8,7 +8,7 @@ from llm_clients import get_claude_response, get_gemini_response, get_chatgpt_re
 ALL_LLMS = {
     "claude": get_claude_response,
     "gemini": get_gemini_response,
-    "chatgpt": get_chatgpt_response,
+    "openai": get_chatgpt_response,
     "deepseek": get_deepseek_response
 }
 

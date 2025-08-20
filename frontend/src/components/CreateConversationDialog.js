@@ -33,14 +33,14 @@ const MenuProps = {
 const CreateConversationDialog = ({ open, onClose, onCreate, availableLLMs }) => {
   const [conversationName, setConversationName] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
-  const [selectedLLMs, setSelectedLLMs] = useState([availableLLMs[0] || 'chatgpt']);
+  const [selectedLLMs, setSelectedLLMs] = useState([availableLLMs[0] || 'openai']);
   const [startConversation, setStartConversation] = useState(true);
 
   useEffect(() => {
     if (open) {
       setConversationName('');
       setSystemPrompt('You are a helpful assistant.');
-      setSelectedLLMs([availableLLMs[0] || 'chatgpt']);
+      setSelectedLLMs([availableLLMs[0] || 'openai']);
       setStartConversation(true);
     }
   }, [open, availableLLMs]);

@@ -255,62 +255,6 @@ def delete_conversation(conversation_id: str):
     logger.info(f"Delete conversation endpoint accessed for ID: {conversation_id}")
     return conversation_controller.delete_conversation(conversation_id)
 
-@app.route("/api/debug/session", methods=["GET"])
-def debug_session_info():
-    """Debug endpoint to check session state"""
-    return jsonify({
-        "session_data": dict(session),
-        "session_id": session.get('_id'),
-        "session_permanent": session.permanent,
-        "user_id_in_session": session.get('_user_id'),
-        "user_authenticated": current_user.is_authenticated,
-        "user_id": getattr(current_user, 'id', None),
-        "user_email": getattr(current_user, 'email', None),
-        "cookies_received": list(request.cookies.keys()),
-        "session_cookie_present": 'session' in request.cookies,
-        "remember_cookie_present": 'remember_token' in request.cookies,
-        "all_cookies": dict(request.cookies),
-        "request_origin": request.headers.get('Origin'),
-        "request_referer": request.headers.get('Referer'),
-        "user_agent": request.headers.get('User-Agent')
-    })
-
-@app.route("/api/debug/test-auth", methods=["GET"])
-@login_required
-def test_auth():
-    """Test endpoint requiring authentication"""
-    return jsonify({
-        "message": "Authentication successful",
-        "user": {
-            "id": current_user.id,
-            "email": current_user.email
-        }
-    })
-
-@app.route("/api/debug/cookies", methods=["GET", "POST"])
-def debug_cookies():
-    """Debug endpoint to check what cookies are being sent"""
-    logger = logging.getLogger(__name__)
-    
-    logger.info("=== COOKIE DEBUG ===")
-    logger.info(f"Request method: {request.method}")
-    logger.info(f"Request path: {request.path}")
-    logger.info(f"Request headers: {dict(request.headers)}")
-    logger.info(f"Request cookies: {dict(request.cookies)}")
-    logger.info(f"Session data: {dict(session)}")
-    logger.info(f"Current user: {current_user}")
-    logger.info(f"User authenticated: {current_user.is_authenticated}")
-    
-    return jsonify({
-        "method": request.method,
-        "path": request.path,
-        "headers": dict(request.headers),
-        "cookies": dict(request.cookies),
-        "session": dict(session),
-        "user_authenticated": current_user.is_authenticated,
-        "user_id": getattr(current_user, 'id', None)
-    })
-
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8080))
     debug = os.getenv('FLASK_ENV') == 'development'

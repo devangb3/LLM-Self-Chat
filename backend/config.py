@@ -35,16 +35,14 @@ class Config:
     
     ENCRYPTION_KEY = None
     
-    # CORS Configuration
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5874').split(',')
     
-    # Project Configuration
-    PROJECT_ID = os.getenv('PROJECT_ID', 'llm-chat-auditor')
+    PROJECT_ID = ""#os.getenv('PROJECT_ID', 'llm-chat-auditor')
     
     @classmethod
     def load_secrets(cls):
         """Load secrets from Google Secret Manager with retry logic"""
-        if PROJECT_ID:
+        if False: #Change to True for production
             logger.info("Loading secrets from Secret Manager...")
             
             try:
@@ -68,14 +66,11 @@ class Config:
                     try:
                         logger.info(f"Attempting to load secret '{secret_name}' (attempt {attempt + 1}/{max_retries})")
                         
-                        # Build the resource name
                         name = f"projects/{cls.PROJECT_ID}/secrets/{secret_name}/versions/latest"
                         
-                        # Access the secret version
                         response = client.access_secret_version(request={"name": name})
                         secret_value = response.payload.data.decode("UTF-8")
                         
-                        # Set the attribute
                         setattr(cls, attr_name, secret_value)
                         logger.info(f"Successfully loaded secret '{secret_name}'")
                         break
@@ -86,13 +81,13 @@ class Config:
                         if attempt < max_retries - 1:
                             logger.info(f"Retrying in {retry_delay} seconds...")
                             time.sleep(retry_delay)
-                            retry_delay *= 2  # Exponential backoff
+                            retry_delay *= 2
                         else:
                             logger.error(f"Failed to load secret '{secret_name}' after {max_retries} attempts")
                             raise ValueError(f"Failed to load secret '{secret_name}': {e}")
         else:
             logger.info("Loading secrets from environment variables (development mode)")
-            cls.MONGODB_URI = os.getenv('MONGODB_URI')
+            cls.MONGODB_URI = "mongodb://localhost:27017/llm-chat-auditor"
             cls.FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
             cls.ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'dev-encryption-key-change-in-production')
     
@@ -101,10 +96,8 @@ class Config:
         """Validate configuration"""
         logger.info("Validating configuration...")
         
-        # Load secrets first
         cls.load_secrets()
         
-        # Validate required fields
         if not cls.MONGODB_URI:
             raise ValueError("MONGODB_URI is required")
         
@@ -117,6 +110,5 @@ class Config:
         logger.info("Configuration validation passed")
         return True
 
-# Create config instance
 config = Config()
 config.validate()
