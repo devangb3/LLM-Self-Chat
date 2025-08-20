@@ -86,6 +86,6 @@ class User(BaseModel, UserMixin):
         return {
             "claude": bool(self.claude_api_key),
             "gemini": bool(self.gemini_api_key),
-            "chatgpt": bool(self.openai_api_key),
+            "openai": bool(self.openai_api_key),
             "deepseek": bool(self.deepseek_api_key)
         } 

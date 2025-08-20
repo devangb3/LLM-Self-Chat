@@ -1,6 +1,10 @@
 import os
+import logging
 from dotenv import load_dotenv
 from google.cloud import secretmanager
+import time
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 PROJECT_ID = os.getenv("PROJECT_ID")
@@ -9,42 +13,102 @@ def get_gcp_secret(secret_id, version_id="latest"):
     """
     Retrieves a secret from Google Cloud Secret Manager.
     """
-    client = secretmanager.SecretManagerServiceClient()
-
-    name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/{version_id}"
-
     try:
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/{version_id}"
         response = client.access_secret_version(request={"name": name})
         return response.payload.data.decode("UTF-8")
+    except ImportError:
+        print(f"Warning: google-cloud-secret-manager not installed, using environment variables")
+        return None
     except Exception as e:
-        raise RuntimeError(f"Failed to access secret {secret_id}: {e}")
+        print(f"Warning: Failed to access secret {secret_id}: {e}")
+        return None
 
 class Config:
-    if PROJECT_ID:
-        FLASK_SECRET_KEY = get_gcp_secret('flask-secret-key')
-        ENCRYPTION_KEY = get_gcp_secret('api-encryption-key')
-    else:
-        FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')
-        ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
+    """Configuration class for the application"""
     
-    MONGODB_URI = os.getenv("MONGODB_URI")
+    FLASK_SECRET_KEY = None
+    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    
+    MONGODB_URI = None
+    
+    ENCRYPTION_KEY = None
+    
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5874').split(',')
+    
+    PROJECT_ID = ""#os.getenv('PROJECT_ID', 'llm-chat-auditor')
+    
+    @classmethod
+    def load_secrets(cls):
+        """Load secrets from Google Secret Manager with retry logic"""
+        if False: #Change to True for production
+            logger.info("Loading secrets from Secret Manager...")
+            
+            try:
+                client = secretmanager.SecretManagerServiceClient()
+                logger.info("Secret Manager client initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize Secret Manager client: {e}")
+                raise
+            
+            secrets_to_load = {
+                'MONGODB_URI': 'mongodb-uri',
+                'FLASK_SECRET_KEY': 'flask-secret-key',
+                'ENCRYPTION_KEY': 'api-encryption-key'
+            }
+            
+            for attr_name, secret_name in secrets_to_load.items():
+                max_retries = 3
+                retry_delay = 2
+                
+                for attempt in range(max_retries):
+                    try:
+                        logger.info(f"Attempting to load secret '{secret_name}' (attempt {attempt + 1}/{max_retries})")
+                        
+                        name = f"projects/{cls.PROJECT_ID}/secrets/{secret_name}/versions/latest"
+                        
+                        response = client.access_secret_version(request={"name": name})
+                        secret_value = response.payload.data.decode("UTF-8")
+                        
+                        setattr(cls, attr_name, secret_value)
+                        logger.info(f"Successfully loaded secret '{secret_name}'")
+                        break
+                        
+                    except Exception as e:
+                        logger.error(f"Failed to load secret '{secret_name}' (attempt {attempt + 1}/{max_retries}): {e}")
+                        
+                        if attempt < max_retries - 1:
+                            logger.info(f"Retrying in {retry_delay} seconds...")
+                            time.sleep(retry_delay)
+                            retry_delay *= 2
+                        else:
+                            logger.error(f"Failed to load secret '{secret_name}' after {max_retries} attempts")
+                            raise ValueError(f"Failed to load secret '{secret_name}': {e}")
+        else:
+            logger.info("Loading secrets from environment variables (development mode)")
+            cls.MONGODB_URI = "mongodb://localhost:27017/llm-chat-auditor"
+            cls.FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+            cls.ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'dev-encryption-key-change-in-production')
     
     @classmethod
     def validate(cls):
-        """Validate required configuration"""
-        missing_vars = []
+        """Validate configuration"""
+        logger.info("Validating configuration...")
         
-        if not cls.FLASK_SECRET_KEY or cls.FLASK_SECRET_KEY == 'your-secret-key-here':
-            missing_vars.append('FLASK_SECRET_KEY')
-        
-        if not cls.ENCRYPTION_KEY:
-            missing_vars.append('ENCRYPTION_KEY')
+        cls.load_secrets()
         
         if not cls.MONGODB_URI:
-            missing_vars.append('MONGODB_URI')
+            raise ValueError("MONGODB_URI is required")
         
-        if missing_vars:
-            raise ValueError(f"Missing required configuration: {', '.join(missing_vars)}")
+        if not cls.FLASK_SECRET_KEY:
+            raise ValueError("FLASK_SECRET_KEY is required")
+        
+        if not cls.ENCRYPTION_KEY:
+            raise ValueError("ENCRYPTION_KEY is required")
+        
+        logger.info("Configuration validation passed")
+        return True
 
 config = Config()
 config.validate()

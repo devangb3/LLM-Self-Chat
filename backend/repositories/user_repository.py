@@ -61,6 +61,6 @@ class UserRepository:
         return {
             "claude": bool(user_doc.get("claude_api_key")),
             "gemini": bool(user_doc.get("gemini_api_key")),
-            "chatgpt": bool(user_doc.get("openai_api_key")),
+            "openai": bool(user_doc.get("openai_api_key")),
             "deepseek": bool(user_doc.get("deepseek_api_key"))
         } 

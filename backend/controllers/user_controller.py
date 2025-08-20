@@ -1,8 +1,18 @@
-from flask import jsonify, request
+from flask import jsonify, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from services.user_service import UserService
 from services.auth_service import AuthService
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Log to stdout for Cloud Run
+        logging.FileHandler('app.log')  # Also log to file
+    ]
+)
+logger = logging.getLogger(__name__)
 class UserController:
     def __init__(self, user_service: UserService):
         self.user_service = user_service
@@ -31,7 +41,22 @@ class UserController:
     def login(self):
         """Handle user login"""
         if request.method == "GET":
-            return jsonify({"message": "Please use POST method to login"}), 200
+            logger.info(f"Current user: {current_user}")
+            logger.info(f"Session contents: {dict(session)}")
+            logger.info(f"User ID in session: {session.get('user_id')}")
+            logger.info(f"Session ID: {session.get('_id')}")
+            
+            if current_user.is_authenticated:
+                return jsonify({
+                    "message": "Already logged in",
+                    "user": {
+                        "id": current_user.id,
+                        "email": current_user.email,
+                        "available_models": self.user_service.get_available_models(current_user.id)
+                    }
+                })
+            else:
+                return jsonify({"message": "Not authenticated"}), 401
 
         try:
             data = request.json
@@ -44,7 +69,17 @@ class UserController:
             user, message = self.user_service.authenticate_user(email, password)
             
             if user:
+                # Configure session to be permanent
+                session.permanent = True
+                
                 login_user(user, remember=True)
+                
+                session['user_id'] = user.id
+                
+                logger.info(f"User logged in successfully: {user.id}")
+                logger.info(f"Session after login: {dict(session)}")
+                logger.info(f"Current user authenticated: {current_user.is_authenticated}")
+                
                 # Generate JWT token for WebSocket authentication
                 access_token = self.auth_service.create_access_token(user)
                 
@@ -66,8 +101,10 @@ class UserController:
     def logout(self):
         """Handle user logout"""
         logout_user()
+        session.clear()  # Clear session data
         return jsonify({"message": "Logged out successfully"})
     
+    @login_required
     def get_user_info(self):
         """Get current user information"""
         return jsonify({
@@ -76,6 +113,7 @@ class UserController:
             "available_models": self.user_service.get_available_models(current_user.id)
         })
     
+    @login_required
     def update_api_keys(self):
         """Update user API keys"""
         try:

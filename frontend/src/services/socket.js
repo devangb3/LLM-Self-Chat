@@ -65,16 +65,10 @@ export const getSocket = () => {
 };
 
 export const disconnectSocket = () => {
-  if (socket && socket.connected) {
+  if (socket) {
     socket.disconnect();
-    console.log('Socket explicitly disconnected.');
+    socket = null;
   }
-  socket = null;
-};
-
-export const reconnectSocket = () => {
-  disconnectSocket();
-  return getSocket();
 };
 
 export const getAuthenticatedSocket = () => {

@@ -73,7 +73,7 @@ const ConversationForm = () => {
         }));
     };
 
-    const allModels = ['claude', 'gemini', 'chatgpt', 'deepseek'];
+    const allModels = ['claude', 'gemini', 'openai', 'deepseek'];
 
     return (
         <div className="max-w-2xl mx-auto p-4">
